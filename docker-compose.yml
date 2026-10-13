@@ -1,0 +1,15 @@
+services:
+  smart-queue:
+    build: .
+    image: smart-queue:latest
+    ports:
+      - "4747:4747"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4747/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

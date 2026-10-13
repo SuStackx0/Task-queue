@@ -1,0 +1,184 @@
+.scene {
+  perspective: 1200px;
+}
+
+.card {
+  position: relative;
+  transform-style: preserve-3d;
+  border-radius: 26px;
+}
+
+.glowRing {
+  position: absolute;
+  inset: -3px;
+  border-radius: 29px;
+  padding: 3px;
+  background: conic-gradient(from var(--spin, 0deg), var(--glow-a), var(--glow-b), var(--glow-c), var(--glow-a));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin 6s linear infinite;
+  opacity: var(--ring-opacity, 0.9);
+  pointer-events: none;
+  filter: blur(0.3px);
+}
+
+@keyframes spin {
+  to { --spin: 360deg; }
+}
+
+@property --spin {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.face {
+  position: relative;
+  backface-visibility: hidden;
+  border-radius: 26px;
+  background: linear-gradient(155deg, var(--glass-strong), var(--glass));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.08) inset,
+    0 20px 50px -14px var(--shadow-color),
+    0 0 42px -6px var(--glow-shadow, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
+.sheen {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.18) 50%, transparent 60%);
+  pointer-events: none;
+  transform: translateX(var(--sheen-x, -60%));
+  transition: transform 0.15s linear;
+}
+
+.urgentBadge {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  margin: 10px 0 -4px 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.64em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(90deg, #ff4d2e, #ff9a3f);
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 16px -2px #ff4d2e;
+  width: fit-content;
+}
+
+.body {
+  flex: 1;
+  padding: 18px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-family: 'Bricolage Grotesque', 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 18px var(--glow-shadow, transparent);
+}
+
+.meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hung {
+  font-size: 0.72em;
+  color: var(--ink-dim);
+  font-weight: 500;
+}
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.68em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: #0a0514;
+  white-space: nowrap;
+  box-shadow: 0 0 16px -2px var(--stamp-color), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: var(--stamp-color);
+}
+
+.stampWork { --stamp-color: var(--tag-work); }
+.stampStudy { --stamp-color: var(--tag-study); }
+.stampTask { --stamp-color: var(--tag-task); }
+
+.backBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.backLabel {
+  font-size: 0.65em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+
+.noteText {
+  font-family: 'Caveat', cursive;
+  font-size: 1.6em;
+  line-height: 1.3;
+  color: var(--ink);
+  text-shadow: 0 0 20px var(--neon-cyan);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.clipWrap {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.clip {
+  width: 26px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, var(--neon-cyan));
+  box-shadow: 0 0 14px var(--neon-cyan);
+}

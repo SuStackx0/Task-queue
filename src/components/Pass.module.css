@@ -1,0 +1,106 @@
+.pass {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 380px;
+  padding: 24px;
+}
+
+.emptyPass {
+  color: var(--ink-dim);
+  font-size: 1em;
+  font-weight: 500;
+  text-align: center;
+}
+
+.ticketWrap {
+  position: relative;
+}
+
+.backBtn {
+  position: absolute;
+  top: -46px;
+  left: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.82em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.backBtn:hover {
+  color: var(--ink);
+  border-color: var(--neon-cyan);
+  transform: translateX(-2px);
+}
+
+.controls {
+  position: absolute;
+  left: 50%;
+  bottom: -60px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+  padding: 11px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  backdrop-filter: blur(12px);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btnPause:hover { box-shadow: 0 0 22px -2px var(--tag-work); border-color: var(--tag-work); }
+.btnDone:hover { box-shadow: 0 0 22px -2px var(--neon-lime); border-color: var(--neon-lime); }
+.btnDrop:hover { box-shadow: 0 0 22px -2px var(--tag-task); border-color: var(--tag-task); }
+
+.noteOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  gap: 10px;
+  z-index: 2;
+}
+
+.noteInput {
+  font-family: 'Caveat', cursive;
+  font-size: 1.7em;
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed var(--neon-cyan);
+  color: var(--ink);
+  text-shadow: 0 0 16px var(--neon-cyan);
+  outline: none;
+  width: 100%;
+  caret-color: var(--neon-cyan);
+}
+
+.noteHint {
+  font-size: 0.64em;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}

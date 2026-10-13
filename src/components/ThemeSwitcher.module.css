@@ -1,0 +1,93 @@
+.wrap {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 40;
+}
+
+.toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px -8px var(--shadow-color);
+}
+
+.toggleDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.panel {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  width: 220px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, var(--glass-strong), var(--glass));
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.62em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--ink);
+  text-align: left;
+}
+
+.option:hover {
+  background: var(--glass);
+}
+
+.optionActive {
+  border-color: var(--glass-border);
+  background: var(--glass);
+}
+
+.swatches {
+  display: flex;
+}
+
+.swatchDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-left: -5px;
+  border: 1.5px solid rgba(0, 0, 0, 0.25);
+}
+
+.swatchDot:first-child {
+  margin-left: 0;
+}
