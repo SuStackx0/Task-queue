@@ -41,7 +41,8 @@ async function init() {
   SQL = await initSqlJs({
     locateFile: (file) => path.join(require.resolve('sql.js').replace(/[^/]+$/, ''), file),
   })
-  if (fs.existsSync(DB_PATH)) {
+  const existed = fs.existsSync(DB_PATH)
+  if (existed) {
     sqlDb = new SQL.Database(fs.readFileSync(DB_PATH))
   } else {
     sqlDb = new SQL.Database()
@@ -49,6 +50,13 @@ async function init() {
   sqlDb.run(SCHEMA)
   migrate()
   persist()
+
+  const count = get(`SELECT COUNT(*) as c FROM tasks`).c
+  console.log(
+    existed
+      ? `[db] loaded ${DB_PATH} — ${count} task(s) on disk`
+      : `[db] no existing database at ${DB_PATH} — starting fresh`
+  )
 }
 
 function migrate() {
