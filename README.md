@@ -27,7 +27,7 @@ Only one task can ever be active at a time. Pausing without a note isn't allowed
 docker compose up -d --build
 ```
 
-Runs on **http://localhost:4747**. Data persists in `./data/queue.db`.
+Runs on **http://localhost:4747**. Data persists in `./data/queue.db` — a real, standard SQLite 3 file (openable with `sqlite3 data/queue.db` or any SQLite tool), written via `sql.js` (SQLite compiled to WebAssembly) and saved atomically on every change. It survives container restarts and rebuilds; it's only gone if you delete `./data` yourself. Check `docker logs <container>` on boot — it prints how many tasks it loaded from disk.
 
 For local development without Docker:
 
