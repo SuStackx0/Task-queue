@@ -1,6 +1,5 @@
 .railBar {
   position: relative;
-  margin: 0 24px;
   border-radius: 24px;
   background: linear-gradient(180deg, var(--glass-strong), var(--glass));
   backdrop-filter: blur(18px) saturate(150%);

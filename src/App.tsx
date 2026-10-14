@@ -303,7 +303,7 @@ export default function App() {
       </header>
 
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ padding: '18px 24px 0' }}>
+        <div style={{ padding: '18px 32px 0' }}>
           <Rail
             tasks={railTasks}
             focusedId={focusedId}
@@ -316,7 +316,7 @@ export default function App() {
           />
         </div>
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 24px', minHeight: 420 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 32px', minHeight: 420 }}>
           <Pass
             task={passTask}
             flipped={flippedForPass}
