@@ -28,8 +28,13 @@ let SQL
 let sqlDb
 
 function persist() {
+  // Write to a temp file and rename over the real one so a crash or power
+  // loss mid-write can never leave a half-written, corrupted database file —
+  // rename is atomic on the same filesystem, a direct writeFileSync is not.
   const data = sqlDb.export()
-  fs.writeFileSync(DB_PATH, Buffer.from(data))
+  const tmpPath = `${DB_PATH}.tmp`
+  fs.writeFileSync(tmpPath, Buffer.from(data))
+  fs.renameSync(tmpPath, DB_PATH)
 }
 
 async function init() {
