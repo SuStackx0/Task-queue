@@ -1,0 +1,85 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 2, 12, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16vh;
+  z-index: 50;
+}
+
+.panel {
+  width: min(480px, 90vw);
+  background: linear-gradient(160deg, var(--glass-strong), var(--glass));
+  backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6), 0 0 60px -10px var(--neon-cyan);
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--ink);
+}
+
+.label {
+  font-family: 'Unbounded', 'Bricolage Grotesque', sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--neon-cyan);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 1.1em;
+  margin-bottom: 16px;
+  color: var(--ink-soft);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95em;
+  line-height: 1.5;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink);
+  outline: none;
+  margin-bottom: 20px;
+}
+
+.textarea:focus {
+  border-color: var(--neon-cyan);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85em;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: linear-gradient(120deg, var(--neon-cyan), var(--neon-purple));
+  color: #0a0514;
+  border: none;
+  box-shadow: 0 0 24px -4px var(--neon-cyan);
+}

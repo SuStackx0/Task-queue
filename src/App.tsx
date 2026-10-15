@@ -6,6 +6,7 @@ import Pass from './components/Pass'
 import Spindle from './components/Spindle'
 import Bin from './components/Bin'
 import AddForm from './components/AddForm'
+import NotesEditor from './components/NotesEditor'
 import PaperFilters from './components/PaperFilters'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import { applyTheme, loadStoredTheme, type Theme } from './themes'
@@ -33,6 +34,7 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [doneToday, setDoneToday] = useState(0)
   const [addOpen, setAddOpen] = useState(false)
+  const [notesEditingId, setNotesEditingId] = useState<number | null>(null)
   const [noteFlow, setNoteFlow] = useState<NoteFlow | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [resumeRevealId, setResumeRevealId] = useState<number | null>(null)
@@ -86,6 +88,7 @@ export default function App() {
   const showingNoteInput = noteFlow !== null && noteFlow.taskId === passTaskId
   const flippedForPass = showingNoteInput || resumeRevealId === passTaskId
   const railTasks = tasks.filter((t) => t.state !== 'active' && t.id !== resumeRevealId)
+  const notesEditingTask = tasks.find((t) => t.id === notesEditingId) || null
 
   function doStart(id: number) {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'active' } : t)))
@@ -210,6 +213,13 @@ export default function App() {
     api.setUrgent(id, nextUrgent).catch(() => load())
   }
 
+  function handleSaveNotes(id: number, notes: string) {
+    const trimmed = notes.trim()
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, notes: trimmed || null } : t)))
+    setNotesEditingId(null)
+    api.setNotes(id, trimmed).catch(() => load())
+  }
+
   function handleLocalReorder(orderedIds: number[]) {
     setTasks((prev) => {
       const byId = new Map(prev.map((t) => [t.id, t]))
@@ -311,6 +321,7 @@ export default function App() {
             onArm={handleArm}
             onStartRequest={handleStartRequest}
             onToggleUrgent={handleToggleUrgent}
+            onOpenNotes={setNotesEditingId}
             onReorder={handleReorderCommit}
             onLocalReorder={handleLocalReorder}
           />
@@ -329,6 +340,7 @@ export default function App() {
             resumeReveal={resumeRevealId === passTaskId && !showingNoteInput}
             onResumeClick={() => resumeRevealId && confirmResume(resumeRevealId)}
             onBackClick={handleBackClick}
+            onOpenNotes={setNotesEditingId}
             onPauseClick={handlePauseClick}
             onDoneClick={handleDoneClick}
             onDropClick={handleDropClick}
@@ -343,6 +355,7 @@ export default function App() {
       </div>
 
       <AddForm open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />
+      <NotesEditor task={notesEditingTask} onClose={() => setNotesEditingId(null)} onSave={handleSaveNotes} />
     </div>
   )
 }

@@ -118,6 +118,11 @@
   font-weight: 500;
 }
 
+.notesDot {
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+
 .stamp {
   display: inline-flex;
   align-items: center;

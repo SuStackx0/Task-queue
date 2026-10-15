@@ -65,6 +65,40 @@
   box-shadow: 0 0 14px -2px #ff4d4d;
 }
 
+.notesFlag {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75em;
+  cursor: pointer;
+  opacity: 0.4;
+  filter: grayscale(1);
+  transition: opacity 0.15s ease, filter 0.15s ease, transform 0.15s ease;
+  z-index: 3;
+}
+
+.notesFlag:hover {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.notesFlagActive {
+  opacity: 1;
+  filter: none;
+  background: rgba(39, 245, 232, 0.16);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 14px -2px var(--neon-cyan);
+}
+
 .armedBadge {
   position: absolute;
   left: 50%;

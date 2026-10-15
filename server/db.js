@@ -17,7 +17,8 @@ const SCHEMA = `
     paused_at INTEGER,
     done_at INTEGER,
     position REAL NOT NULL,
-    urgent INTEGER NOT NULL DEFAULT 0
+    urgent INTEGER NOT NULL DEFAULT 0,
+    notes TEXT
   );
 
   CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active
@@ -61,9 +62,12 @@ async function init() {
 
 function migrate() {
   const cols = all(`PRAGMA table_info(tasks)`)
-  const hasUrgent = cols.some((c) => c.name === 'urgent')
-  if (!hasUrgent) {
+  const names = cols.map((c) => c.name)
+  if (!names.includes('urgent')) {
     sqlDb.run(`ALTER TABLE tasks ADD COLUMN urgent INTEGER NOT NULL DEFAULT 0`)
+  }
+  if (!names.includes('notes')) {
+    sqlDb.run(`ALTER TABLE tasks ADD COLUMN notes TEXT`)
   }
 }
 

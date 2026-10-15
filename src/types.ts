@@ -13,4 +13,5 @@ export interface Task {
   doneAt: number | null
   position: number
   urgent: boolean
+  notes: string | null
 }

@@ -141,6 +141,7 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(function Ticket(
             </div>
             <div className={styles.meta}>
               <span className={`${styles.stamp} ${TAG_CLASS[task.tag]}`}>{TAG_LABEL[task.tag]}</span>
+              {task.notes && <span className={styles.notesDot} title="has notes">📝</span>}
               {task.state !== 'active' && <span className={styles.hung}>{hungAgo(hangStart)}</span>}
             </div>
           </div>

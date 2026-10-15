@@ -27,6 +27,7 @@ function serialize(row) {
     doneAt: row.done_at,
     position: row.position,
     urgent: !!row.urgent,
+    notes: row.notes,
   }
 }
 
@@ -77,6 +78,20 @@ app.patch('/api/tasks/:id/urgent', async (req, reply) => {
   const row = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
   if (!row) return reply.code(404).send({ error: 'not found' })
   db.run(`UPDATE tasks SET urgent = ?, updated_at = ? WHERE id = ?`, [urgent ? 1 : 0, now(), id])
+  const updated = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
+  reply.send(serialize(updated))
+})
+
+app.patch('/api/tasks/:id/notes', async (req, reply) => {
+  const id = Number(req.params.id)
+  const { notes } = req.body || {}
+  if (typeof notes !== 'string') {
+    return reply.code(400).send({ error: 'notes must be a string' })
+  }
+  const row = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
+  if (!row) return reply.code(404).send({ error: 'not found' })
+  const trimmed = notes.trim()
+  db.run(`UPDATE tasks SET notes = ?, updated_at = ? WHERE id = ?`, [trimmed || null, now(), id])
   const updated = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
   reply.send(serialize(updated))
 })

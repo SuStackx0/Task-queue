@@ -16,6 +16,7 @@ interface PassProps {
   resumeReveal: boolean
   onResumeClick: () => void
   onBackClick: () => void
+  onOpenNotes: (id: number) => void
   onPauseClick: () => void
   onDoneClick: () => void
   onDropClick: () => void
@@ -39,6 +40,7 @@ export default function Pass({
   resumeReveal,
   onResumeClick,
   onBackClick,
+  onOpenNotes,
   onPauseClick,
   onDoneClick,
   onDropClick,
@@ -100,6 +102,13 @@ export default function Pass({
               <>
                 <button className={styles.backBtn} onClick={onBackClick} title="undo starting this ticket">
                   ← back
+                </button>
+                <button
+                  className={`${styles.notesBtn} ${task.notes ? styles.notesBtnActive : ''}`}
+                  onClick={() => onOpenNotes(task.id)}
+                  title={task.notes ? 'edit notes' : 'add notes'}
+                >
+                  📝 {task.notes ? 'notes' : 'add notes'}
                 </button>
                 <div className={styles.controls}>
                   <button className={`${styles.btn} ${styles.btnPause}`} onClick={onPauseClick}>

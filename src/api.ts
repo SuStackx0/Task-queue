@@ -42,4 +42,9 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ urgent }),
     }),
+  setNotes: (id: number, notes: string) =>
+    req<Task>(`/api/tasks/${id}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    }),
 }

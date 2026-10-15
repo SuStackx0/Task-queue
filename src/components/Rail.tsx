@@ -12,6 +12,7 @@ interface RailProps {
   onArm: (id: number) => void
   onStartRequest: (id: number) => void
   onToggleUrgent: (id: number) => void
+  onOpenNotes: (id: number) => void
   onReorder: (id: number, newPosition: number) => void
   onLocalReorder: (orderedIds: number[]) => void
 }
@@ -25,6 +26,7 @@ export default function Rail({
   onArm,
   onStartRequest,
   onToggleUrgent,
+  onOpenNotes,
   onReorder,
   onLocalReorder,
 }: RailProps) {
@@ -161,6 +163,17 @@ export default function Rail({
                     }}
                   >
                     🔥
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.notesFlag} ${task.notes ? styles.notesFlagActive : ''}`}
+                    title={task.notes ? 'edit notes' : 'add notes'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpenNotes(task.id)
+                    }}
+                  >
+                    📝
                   </button>
                   {armedId === task.id && (
                     <div className={styles.armedBadge}>tap again to {task.state === 'paused' ? 'resume' : 'start'} · esc to cancel</div>
