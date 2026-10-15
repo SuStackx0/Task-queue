@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, useMotionValue, useSpring } from 'motion/react'
 import type { Task } from '../types'
-import { agingFactor, hungAgo, ticketRotation } from '../utils/ticket'
+import { agingFactor, hungAgo, ticketGlow, ticketRotation } from '../utils/ticket'
 import styles from './Ticket.module.css'
 
 const TAG_LABEL: Record<Task['tag'], string> = {
@@ -16,12 +16,8 @@ const TAG_CLASS: Record<Task['tag'], string> = {
   task: styles.stampTask,
 }
 
-const TAG_GLOW: Record<Task['tag'], [string, string, string]> = {
-  work: ['#4df0ff', '#b24bff', '#4df0ff'],
-  study: ['#d4ff3f', '#4df0ff', '#d4ff3f'],
-  task: ['#ff3fd0', '#b24bff', '#ff3fd0'],
-}
-
+// Fixed and never randomized — urgent always reads the same way everywhere,
+// regardless of theme or which ticket it is, so it's instantly recognizable.
 const URGENT_GLOW: [string, string, string] = ['#ff2e2e', '#ff9a3f', '#ff2e2e']
 
 interface TicketProps {
@@ -48,7 +44,7 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(function Ticket(
   const h = size === 'rail' ? 118 : 310
 
   const paper = mixGlass(aging)
-  const [ga, gb, gc] = task.urgent ? URGENT_GLOW : TAG_GLOW[task.tag]
+  const [ga, gb, gc] = task.urgent ? URGENT_GLOW : ticketGlow(task.id)
 
   const rotX = useMotionValue(0)
   const rotY = useMotionValue(0)

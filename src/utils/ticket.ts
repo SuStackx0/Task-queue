@@ -22,6 +22,22 @@ export function agingFactor(hangStart: number): number {
   return Math.max(0, Math.min(1, hours / 72))
 }
 
+/**
+ * Each ticket gets its own distinct glow hue, seeded by id, instead of a
+ * color tied to its tag — otherwise a rail full of the same tag (e.g. every
+ * item tagged "study") all look visually identical. The red/orange band is
+ * skipped so an individual ticket's hue can never be confused with the
+ * fixed, deliberately-standardized "urgent" glow (see URGENT_GLOW).
+ */
+export function ticketGlow(id: number): [string, string, string] {
+  let hue = Math.floor(seedFrom(id + 11) * 360)
+  if (hue < 20 || hue > 345) hue = (hue + 90) % 360
+  const a = `hsl(${hue}, 92%, 65%)`
+  const b = `hsl(${(hue + 55) % 360}, 92%, 62%)`
+  const c = `hsl(${(hue - 55 + 360) % 360}, 92%, 65%)`
+  return [a, b, c]
+}
+
 export function hungAgo(hangStart: number): string {
   const ms = Date.now() - hangStart
   const mins = Math.floor(ms / 60000)
