@@ -12,6 +12,4 @@ export interface Task {
   pausedAt: number | null
   doneAt: number | null
   position: number
-  urgent: boolean
-  notes: string | null
 }

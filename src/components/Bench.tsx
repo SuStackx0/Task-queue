@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import type { Task } from '../types'
-import Ticket from './Ticket'
-import styles from './Pass.module.css'
+import Tube from './Tube'
+import styles from './Bench.module.css'
 
-interface PassProps {
+interface BenchProps {
   task: Task | null
   flipped: boolean
   showingNoteInput: boolean
@@ -16,7 +16,6 @@ interface PassProps {
   resumeReveal: boolean
   onResumeClick: () => void
   onBackClick: () => void
-  onOpenNotes: (id: number) => void
   onPauseClick: () => void
   onDoneClick: () => void
   onDropClick: () => void
@@ -24,11 +23,17 @@ interface PassProps {
   onExitAnimationComplete: () => void
 }
 
-const DONE_TARGET = { x: 520, y: -30, rotate: 18, scale: 0.75, opacity: 0 }
-const DROP_TARGET = { x: 60, y: 260, rotate: 120, scale: 0.3, opacity: 0, filter: 'blur(1px)' }
-const SETTLE = { opacity: 1, scale: 1, rotate: [-14, 10, -4, 0], y: 0, x: 0, filter: 'blur(0px)' }
+const DONE_TARGET = { x: 460, y: -20, rotate: 14, scale: 0.7, opacity: 0 }
+const DROP_TARGET = { x: 180, y: 300, rotate: 70, scale: 0.4, opacity: 0 }
+const SETTLE = { opacity: 1, scale: 1, rotate: [-10, 6, -2, 0], y: 0, x: 0 }
 
-export default function Pass({
+const SHARDS = Array.from({ length: 8 }, (_, i) => ({
+  angle: (i / 8) * 360,
+  dist: 50 + (i % 3) * 20,
+  rotate: (i * 53) % 360,
+}))
+
+export default function Bench({
   task,
   flipped,
   showingNoteInput,
@@ -40,13 +45,12 @@ export default function Pass({
   resumeReveal,
   onResumeClick,
   onBackClick,
-  onOpenNotes,
   onPauseClick,
   onDoneClick,
   onDropClick,
   exitKind,
   onExitAnimationComplete,
-}: PassProps) {
+}: BenchProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -54,15 +58,17 @@ export default function Pass({
   }, [showingNoteInput])
 
   return (
-    <div className={styles.pass}>
-      {!task && <div className={styles.emptyPass}>The pass is clear. Start a ticket from the rail.</div>}
+    <div className={styles.bench}>
+      {!task && <div className={styles.emptyBench}>The bench is clear. Pull a tube up from the rack.</div>}
+      <div className={styles.spotlight} />
+      <div className={styles.caustics} />
       <AnimatePresence>
         {task && (
           <motion.div
             key={task.id}
-            className={styles.ticketWrap}
-            layoutId={`ticket-wrap-${task.id}`}
-            initial={{ opacity: 0, scale: 0.6, rotate: -14, y: -60 }}
+            className={styles.tubeWrap}
+            layoutId={`tube-wrap-${task.id}`}
+            initial={{ opacity: 0, scale: 0.6, rotate: -10, y: 60 }}
             animate={exitKind === 'done' ? DONE_TARGET : exitKind === 'drop' ? DROP_TARGET : SETTLE}
             exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
             transition={
@@ -77,12 +83,44 @@ export default function Pass({
             }}
             onClick={resumeReveal ? onResumeClick : undefined}
           >
-            <Ticket task={task} flipped={flipped} size="pass" />
+            {!showingNoteInput && !resumeReveal && !exitKind && (
+              <div className={styles.clamp}>
+                <div className={styles.clampArm} />
+                <div className={styles.clampArm} />
+              </div>
+            )}
+            <Tube task={task} flipped={flipped} size="bench" />
+
+            {exitKind && (
+              <motion.div
+                className={styles.glitchFlash}
+                initial={{ opacity: 0.9 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+              />
+            )}
+
+            {exitKind === 'drop' &&
+              SHARDS.map((s, i) => (
+                <motion.div
+                  key={i}
+                  className={styles.shard}
+                  style={{ left: '45%', top: '50%' }}
+                  initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
+                  animate={{
+                    x: Math.cos((s.angle * Math.PI) / 180) * s.dist,
+                    y: Math.sin((s.angle * Math.PI) / 180) * s.dist + 60,
+                    opacity: 0,
+                    rotate: s.rotate,
+                  }}
+                  transition={{ duration: 0.55, ease: 'easeOut' }}
+                />
+              ))}
 
             {showingNoteInput && (
               <div className={styles.noteOverlay}>
                 <div className={styles.noteHint}>
-                  next step — required to pause{noteCancelable ? ' · esc to cancel' : ' (forced: another ticket is starting)'}
+                  next step — required to pause{noteCancelable ? ' · esc to cancel' : ' (forced: another tube is starting)'}
                 </div>
                 <input
                   ref={inputRef}
@@ -100,24 +138,17 @@ export default function Pass({
 
             {!showingNoteInput && !resumeReveal && !exitKind && (
               <>
-                <button className={styles.backBtn} onClick={onBackClick} title="undo starting this ticket">
+                <button className={styles.backBtn} onClick={onBackClick} title="undo starting this tube">
                   ← back
                 </button>
-                <button
-                  className={`${styles.notesBtn} ${task.notes ? styles.notesBtnActive : ''}`}
-                  onClick={() => onOpenNotes(task.id)}
-                  title={task.notes ? 'edit notes' : 'add notes'}
-                >
-                  📝 {task.notes ? 'notes' : 'add notes'}
-                </button>
                 <div className={styles.controls}>
-                  <button className={`${styles.btn} ${styles.btnPause}`} onClick={onPauseClick}>
+                  <button className={styles.btn} onClick={onPauseClick}>
                     pause (p)
                   </button>
-                  <button className={`${styles.btn} ${styles.btnDone}`} onClick={onDoneClick}>
+                  <button className={styles.btn} onClick={onDoneClick}>
                     done (d)
                   </button>
-                  <button className={`${styles.btn} ${styles.btnDrop}`} onClick={onDropClick}>
+                  <button className={styles.btn} onClick={onDropClick}>
                     drop (x)
                   </button>
                 </div>
@@ -125,7 +156,7 @@ export default function Pass({
             )}
 
             {resumeReveal && (
-              <div className={styles.noteHint} style={{ position: 'absolute', bottom: -28, left: 0 }}>
+              <div className={styles.noteHint} style={{ position: 'absolute', bottom: -24, left: 0 }}>
                 click to resume
               </div>
             )}

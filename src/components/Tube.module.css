@@ -1,0 +1,258 @@
+.scene {
+  perspective: 1400px;
+}
+
+.card {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+
+.rim {
+  width: 62%;
+  height: 8%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--glass-rim), var(--glass-fill));
+  border: 1px solid var(--glass-rim);
+  border-bottom: none;
+  flex: none;
+  z-index: 3;
+}
+
+.cap {
+  position: absolute;
+  top: 0;
+  width: 64%;
+  height: 10%;
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.capWork {
+  border-radius: 6px;
+  background: linear-gradient(180deg, #4a4a4c, #1c1c1d);
+  border: 1px solid var(--rack-edge);
+}
+
+.capStudy {
+  border-radius: 50% 50% 8px 8px / 70% 70% 10px 10%;
+  background: linear-gradient(180deg, #5a5a5c, #1c1c1d);
+  border: 1px solid var(--rack-edge);
+}
+
+.capTask {
+  border-radius: 4px;
+  background: repeating-linear-gradient(0deg, #3c3c3e 0 3px, #1c1c1d 3px 6px);
+  border: 1px solid var(--rack-edge);
+}
+
+.body {
+  position: relative;
+  width: 62%;
+  flex: 1;
+  margin-top: -1px;
+  border-radius: 10px 10px var(--bottom-radius, 26px) var(--bottom-radius, 26px);
+  overflow: hidden;
+  background: linear-gradient(100deg, var(--glass-fill) 0%, transparent 35%, transparent 65%, var(--glass-fill) 100%);
+  border: 1px solid var(--glass-rim);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.3), 0 0 var(--halo-blur, 0) hsla(var(--tint-hue, 0), 38%, 58%, var(--halo-op, 0));
+}
+
+.specular {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 18%;
+  width: 10%;
+  background: linear-gradient(180deg, var(--glass-specular), transparent 70%);
+  opacity: 0.55;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.liquid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: height 0.6s cubic-bezier(0.3, 0, 0.4, 1);
+  z-index: 1;
+  filter: drop-shadow(0 0 var(--glow-blur, 0) hsla(var(--tint-hue, 0), 42%, 56%, var(--glow-op, 0)));
+}
+
+.liquidSheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--sheen-angle, 120deg),
+    transparent 30%,
+    rgba(var(--frost), var(--sheen-op, 0.1)) 50%,
+    transparent 70%
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.liquidWork {
+  background: linear-gradient(180deg, var(--liquid), color-mix(in srgb, var(--liquid) 80%, transparent));
+}
+
+.liquidStudy {
+  background-color: color-mix(in srgb, var(--liquid) 55%, transparent);
+  background-image: radial-gradient(color-mix(in srgb, var(--liquid) 95%, transparent) 22%, transparent 24%);
+  background-size: calc(7px * var(--pattern-scale, 1)) calc(7px * var(--pattern-scale, 1));
+}
+
+.liquidTask {
+  background-color: color-mix(in srgb, var(--liquid) 45%, transparent);
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--liquid) 90%, transparent) 0,
+    color-mix(in srgb, var(--liquid) 90%, transparent) calc(2px * var(--pattern-scale, 1)),
+    transparent calc(2px * var(--pattern-scale, 1)),
+    transparent calc(7px * var(--pattern-scale, 1))
+  );
+}
+
+.meniscus {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 50%;
+  background: inherit;
+  filter: brightness(1.25);
+  opacity: 0.8;
+}
+
+.sediment {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--liquid) 70%, var(--bg) 30%);
+  z-index: 1;
+}
+
+.fog {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(var(--frost), var(--fog-opacity, 0)) 0%, rgba(var(--frost), 0) 55%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(var(--frost), 0.5);
+  z-index: 1;
+}
+
+.labelBand {
+  position: absolute;
+  left: 50%;
+  bottom: var(--label-bottom, 36px);
+  transform: translateX(-50%);
+  width: 94%;
+  padding: 5px 6px;
+  background: var(--bg);
+  border: 1px solid var(--ink-dim);
+  border-left: 3px solid hsla(var(--tint-hue, 0), 32%, 50%, 0.55);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.labelPeel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--bg);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  transform-origin: top right;
+  z-index: 4;
+}
+
+.title {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: var(--title-size, 0.66em);
+  line-height: 1.22;
+  color: var(--ink);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  word-break: break-word;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tagText {
+  font-size: 0.56em;
+  color: var(--ink-soft);
+  text-transform: lowercase;
+}
+
+.hungText {
+  font-size: 0.56em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.critical {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.backNote {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  text-align: center;
+  z-index: 3;
+}
+
+.backLabel {
+  font-size: 0.56em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+}
+
+.noteText {
+  font-family: 'Reenie Beanie', cursive;
+  font-size: 1.8em;
+  line-height: 1.15;
+  color: var(--ink);
+  word-break: break-word;
+}

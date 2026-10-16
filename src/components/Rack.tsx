@@ -2,34 +2,32 @@ import { useRef, useState, type HTMLAttributes } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDrag } from '@use-gesture/react'
 import type { Task } from '../types'
-import Ticket from './Ticket'
-import styles from './Rail.module.css'
+import Tube from './Tube'
+import styles from './Rack.module.css'
 
-interface RailProps {
+interface RackProps {
   tasks: Task[]
   focusedId: number | null
   armedId: number | null
+  justAddedId: number | null
   onArm: (id: number) => void
   onStartRequest: (id: number) => void
-  onToggleUrgent: (id: number) => void
-  onOpenNotes: (id: number) => void
   onReorder: (id: number, newPosition: number) => void
   onLocalReorder: (orderedIds: number[]) => void
 }
 
 const START_THRESHOLD = 56
 
-export default function Rail({
+export default function Rack({
   tasks,
   focusedId,
   armedId,
+  justAddedId,
   onArm,
   onStartRequest,
-  onToggleUrgent,
-  onOpenNotes,
   onReorder,
   onLocalReorder,
-}: RailProps) {
+}: RackProps) {
   const refs = useRef(new Map<number, HTMLDivElement>())
   const [dragState, setDragState] = useState<{ id: number; dx: number; dy: number; axis: 'x' | 'y' | null } | null>(
     null
@@ -51,7 +49,7 @@ export default function Rail({
     if (last) {
       setDragState((prev) => {
         if (!prev || prev.id !== id) return null
-        if (prev.axis === 'y' && prev.dy > START_THRESHOLD) {
+        if (prev.axis === 'y' && prev.dy < -START_THRESHOLD) {
           onStartRequest(id)
         } else if (prev.axis === 'x' && Math.abs(prev.dx) > 20) {
           resolveReorder(id, event as PointerEvent)
@@ -95,30 +93,33 @@ export default function Rail({
   }
 
   return (
-    <div className={styles.railBar}>
-      <div className={styles.printSlot} aria-hidden="true" />
-      <div className={styles.railTrack}>
+    <div className={styles.rackBar}>
+      <div className={styles.pipette} aria-hidden="true">
+        <div className={styles.pipetteBody} />
+        <div className={styles.pipetteTip} />
+      </div>
+      <div className={styles.rackTrack}>
         {tasks.length === 0 && (
-          <div className={styles.emptyRail}>Nothing on the rail. Press n to add a ticket.</div>
+          <div className={styles.emptyRack}>Nothing in the rack. Press n to add a tube.</div>
         )}
         <AnimatePresence initial={false}>
-          {tasks.map((task, i) => {
+          {tasks.map((task) => {
             const isDragging = dragState?.id === task.id
             const dx = isDragging && dragState?.axis === 'x' ? dragState.dx : 0
-            const dy = isDragging && dragState?.axis === 'y' ? Math.max(0, dragState.dy) : 0
-            const swing = isDragging && dragState?.axis === 'y' ? Math.min(18, dy / 4) : 0
+            const dy = isDragging && dragState?.axis === 'y' ? Math.min(0, dragState.dy) : 0
+            const swing = isDragging && dragState?.axis === 'y' ? Math.max(-14, dy / 5) : 0
 
             return (
               <motion.div
                 key={task.id}
                 layout
-                layoutId={`ticket-wrap-${task.id}`}
-                className={styles.ticketSlot}
+                layoutId={`tube-wrap-${task.id}`}
+                className={styles.tubeSlot}
                 ref={(el) => {
                   if (el) refs.current.set(task.id, el)
                   else refs.current.delete(task.id)
                 }}
-                initial={{ opacity: 0, scale: 0.85, y: -16 }}
+                initial={{ opacity: 0, scale: 0.85, y: 16 }}
                 animate={{
                   opacity: 1,
                   scale: 1,
@@ -132,7 +133,7 @@ export default function Rail({
                     ? { type: 'tween', duration: 0 }
                     : { type: 'spring', stiffness: 420, damping: 26 }
                 }
-                whileHover={!isDragging ? { y: -10, rotate: 2 } : undefined}
+                whileHover={!isDragging ? { y: -6 } : undefined}
               >
                 <div
                   {...(bind(task.id) as HTMLAttributes<HTMLDivElement>)}
@@ -144,39 +145,19 @@ export default function Rail({
                   }}
                   style={{ touchAction: 'none' }}
                 >
-                  <Ticket
+                  <Tube
                     task={task}
                     flipped={false}
-                    size="rail"
-                    showClip
+                    size="rack"
                     focused={focusedId === task.id}
                     armed={armedId === task.id}
+                    scramble={justAddedId === task.id}
                     tabIndex={0}
                   />
-                  <button
-                    type="button"
-                    className={`${styles.urgentFlag} ${task.urgent ? styles.urgentFlagActive : ''}`}
-                    title={task.urgent ? 'unmark urgent' : 'mark urgent'}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onToggleUrgent(task.id)
-                    }}
-                  >
-                    🔥
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.notesFlag} ${task.notes ? styles.notesFlagActive : ''}`}
-                    title={task.notes ? 'edit notes' : 'add notes'}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onOpenNotes(task.id)
-                    }}
-                  >
-                    📝
-                  </button>
                   {armedId === task.id && (
-                    <div className={styles.armedBadge}>tap again to {task.state === 'paused' ? 'resume' : 'start'} · esc to cancel</div>
+                    <div className={styles.armedBadge}>
+                      tap again to {task.state === 'paused' ? 'resume' : 'start'} · esc to cancel
+                    </div>
                   )}
                 </div>
               </motion.div>

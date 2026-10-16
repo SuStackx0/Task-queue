@@ -26,8 +26,6 @@ function serialize(row) {
     pausedAt: row.paused_at,
     doneAt: row.done_at,
     position: row.position,
-    urgent: !!row.urgent,
-    notes: row.notes,
   }
 }
 
@@ -35,9 +33,7 @@ app.get('/health', async () => ({ ok: true }))
 
 app.get('/api/tasks', async () => {
   const tasks = db
-    .all(
-      `SELECT * FROM tasks WHERE state != 'done' AND state != 'dropped' ORDER BY urgent DESC, position ASC`
-    )
+    .all(`SELECT * FROM tasks WHERE state NOT IN ('done', 'dropped') ORDER BY position ASC`)
     .map(serialize)
 
   const startOfDay = new Date()
@@ -50,7 +46,7 @@ app.get('/api/tasks', async () => {
 })
 
 app.post('/api/tasks', async (req, reply) => {
-  const { title, tag, urgent } = req.body || {}
+  const { title, tag } = req.body || {}
   if (!title || typeof title !== 'string' || !title.trim()) {
     return reply.code(400).send({ error: 'title is required' })
   }
@@ -61,39 +57,12 @@ app.post('/api/tasks', async (req, reply) => {
   const maxRow = db.get(`SELECT MAX(position) as m FROM tasks`)
   const maxPos = maxRow && maxRow.m != null ? maxRow.m : 0
   db.run(
-    `INSERT INTO tasks (title, tag, state, created_at, updated_at, position, urgent)
-     VALUES (?, ?, 'queued', ?, ?, ?, ?)`,
-    [title.trim(), tag, t, t, maxPos + 1, urgent ? 1 : 0]
+    `INSERT INTO tasks (title, tag, state, created_at, updated_at, position)
+     VALUES (?, ?, 'queued', ?, ?, ?)`,
+    [title.trim(), tag, t, t, maxPos + 1]
   )
   const row = db.get(`SELECT * FROM tasks ORDER BY id DESC LIMIT 1`)
   reply.code(201).send(serialize(row))
-})
-
-app.patch('/api/tasks/:id/urgent', async (req, reply) => {
-  const id = Number(req.params.id)
-  const { urgent } = req.body || {}
-  if (typeof urgent !== 'boolean') {
-    return reply.code(400).send({ error: 'urgent must be a boolean' })
-  }
-  const row = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
-  if (!row) return reply.code(404).send({ error: 'not found' })
-  db.run(`UPDATE tasks SET urgent = ?, updated_at = ? WHERE id = ?`, [urgent ? 1 : 0, now(), id])
-  const updated = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
-  reply.send(serialize(updated))
-})
-
-app.patch('/api/tasks/:id/notes', async (req, reply) => {
-  const id = Number(req.params.id)
-  const { notes } = req.body || {}
-  if (typeof notes !== 'string') {
-    return reply.code(400).send({ error: 'notes must be a string' })
-  }
-  const row = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
-  if (!row) return reply.code(404).send({ error: 'not found' })
-  const trimmed = notes.trim()
-  db.run(`UPDATE tasks SET notes = ?, updated_at = ? WHERE id = ?`, [trimmed || null, now(), id])
-  const updated = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
-  reply.send(serialize(updated))
 })
 
 app.post('/api/tasks/:id/start', async (req, reply) => {

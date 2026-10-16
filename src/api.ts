@@ -20,8 +20,8 @@ async function req<T>(url: string, opts?: RequestInit): Promise<T> {
 
 export const api = {
   list: () => req<{ tasks: Task[]; doneToday: number }>('/api/tasks'),
-  create: (title: string, tag: Tag, urgent = false) =>
-    req<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ title, tag, urgent }) }),
+  create: (title: string, tag: Tag) =>
+    req<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ title, tag }) }),
   start: (id: number) => req<Task>(`/api/tasks/${id}/start`, { method: 'POST' }),
   back: (id: number) => req<Task>(`/api/tasks/${id}/back`, { method: 'POST' }),
   pause: (id: number, nextStep: string) =>
@@ -36,15 +36,5 @@ export const api = {
     req<{ ok: true }>(`/api/tasks/${id}/position`, {
       method: 'PATCH',
       body: JSON.stringify({ position }),
-    }),
-  setUrgent: (id: number, urgent: boolean) =>
-    req<Task>(`/api/tasks/${id}/urgent`, {
-      method: 'PATCH',
-      body: JSON.stringify({ urgent }),
-    }),
-  setNotes: (id: number, notes: string) =>
-    req<Task>(`/api/tasks/${id}/notes`, {
-      method: 'PATCH',
-      body: JSON.stringify({ notes }),
     }),
 }

@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import type { Tag, Task } from './types'
-import Rail from './components/Rail'
-import Pass from './components/Pass'
-import Spindle from './components/Spindle'
-import Bin from './components/Bin'
+import Rack from './components/Rack'
+import Bench from './components/Bench'
+import CryoBox from './components/CryoBox'
+import Drain from './components/Drain'
 import AddForm from './components/AddForm'
-import NotesEditor from './components/NotesEditor'
-import PaperFilters from './components/PaperFilters'
-import ThemeSwitcher from './components/ThemeSwitcher'
-import { applyTheme, loadStoredTheme, type Theme } from './themes'
 
 interface NoteFlow {
   taskId: number
@@ -20,27 +16,21 @@ function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
     if (a.state === 'active') return -1
     if (b.state === 'active') return 1
-    if (a.urgent !== b.urgent) return a.urgent ? -1 : 1
     return a.position - b.position
   })
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<Theme>(() => loadStoredTheme())
-  useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
-
   const [tasks, setTasks] = useState<Task[]>([])
   const [doneToday, setDoneToday] = useState(0)
   const [addOpen, setAddOpen] = useState(false)
-  const [notesEditingId, setNotesEditingId] = useState<number | null>(null)
   const [noteFlow, setNoteFlow] = useState<NoteFlow | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [resumeRevealId, setResumeRevealId] = useState<number | null>(null)
   const [exitAnim, setExitAnim] = useState<{ taskId: number; kind: 'done' | 'drop' } | null>(null)
   const [focusedId, setFocusedId] = useState<number | null>(null)
   const [armedId, setArmedId] = useState<number | null>(null)
+  const [justAddedId, setJustAddedId] = useState<number | null>(null)
   const [bumpKey, setBumpKey] = useState(0)
   const resumeTimer = useRef<number | null>(null)
   const armTimer = useRef<number | null>(null)
@@ -75,7 +65,7 @@ export default function App() {
     load()
   }, [load])
 
-  // re-render periodically so "hung Nd ago" / paper aging stay live
+  // re-render periodically so "hung Nd ago" / aging stay live
   const [, forceTick] = useState(0)
   useEffect(() => {
     const t = setInterval(() => forceTick((n) => n + 1), 30000)
@@ -83,12 +73,11 @@ export default function App() {
   }, [])
 
   const activeTask = tasks.find((t) => t.state === 'active') || null
-  const passTaskId = activeTask?.id ?? resumeRevealId
-  const passTask = tasks.find((t) => t.id === passTaskId) || null
-  const showingNoteInput = noteFlow !== null && noteFlow.taskId === passTaskId
-  const flippedForPass = showingNoteInput || resumeRevealId === passTaskId
-  const railTasks = tasks.filter((t) => t.state !== 'active' && t.id !== resumeRevealId)
-  const notesEditingTask = tasks.find((t) => t.id === notesEditingId) || null
+  const benchTaskId = activeTask?.id ?? resumeRevealId
+  const benchTask = tasks.find((t) => t.id === benchTaskId) || null
+  const showingNoteInput = noteFlow !== null && noteFlow.taskId === benchTaskId
+  const flippedForBench = showingNoteInput || resumeRevealId === benchTaskId
+  const rackTasks = tasks.filter((t) => t.state !== 'active' && t.id !== resumeRevealId)
 
   function doStart(id: number) {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'active' } : t)))
@@ -198,26 +187,13 @@ export default function App() {
     }
   }
 
-  function handleAdd(title: string, tag: Tag, urgent: boolean) {
+  function handleAdd(title: string, tag: Tag) {
     setAddOpen(false)
-    api.create(title, tag, urgent).then((task) => {
+    api.create(title, tag).then((task) => {
       setTasks((prev) => sortTasks([...prev, task]))
+      setJustAddedId(task.id)
+      window.setTimeout(() => setJustAddedId((cur) => (cur === task.id ? null : cur)), 900)
     })
-  }
-
-  function handleToggleUrgent(id: number) {
-    const target = tasks.find((t) => t.id === id)
-    if (!target) return
-    const nextUrgent = !target.urgent
-    setTasks((prev) => sortTasks(prev.map((t) => (t.id === id ? { ...t, urgent: nextUrgent } : t))))
-    api.setUrgent(id, nextUrgent).catch(() => load())
-  }
-
-  function handleSaveNotes(id: number, notes: string) {
-    const trimmed = notes.trim()
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, notes: trimmed || null } : t)))
-    setNotesEditingId(null)
-    api.setNotes(id, trimmed).catch(() => load())
   }
 
   function handleLocalReorder(orderedIds: number[]) {
@@ -250,12 +226,12 @@ export default function App() {
         setAddOpen(true)
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault()
-        if (railTasks.length === 0) return
-        const idx = railTasks.findIndex((t) => t.id === focusedId)
+        if (rackTasks.length === 0) return
+        const idx = rackTasks.findIndex((t) => t.id === focusedId)
         let next: number
         if (idx === -1) next = 0
-        else next = e.key === 'ArrowLeft' ? Math.max(0, idx - 1) : Math.min(railTasks.length - 1, idx + 1)
-        setFocusedId(railTasks[next].id)
+        else next = e.key === 'ArrowLeft' ? Math.max(0, idx - 1) : Math.min(rackTasks.length - 1, idx + 1)
+        setFocusedId(rackTasks[next].id)
       } else if (e.key === 'Enter') {
         if (showingNoteInput) return
         if (resumeRevealId) {
@@ -276,86 +252,66 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [railTasks, focusedId, showingNoteInput, resumeRevealId, activeTask, noteFlow])
+  }, [rackTasks, focusedId, showingNoteInput, resumeRevealId, activeTask, noteFlow])
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <div className="aurora">
-        <div className="auroraMid" />
-      </div>
-      <PaperFilters />
-      <ThemeSwitcher current={theme} onSelect={setTheme} />
-      <header
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          padding: '28px 32px 0',
-        }}
-      >
+      <header style={{ padding: '26px 32px 0' }}>
         <div
           style={{
-            fontFamily: "'Bricolage Grotesque', sans-serif",
-            fontWeight: 800,
-            fontSize: '1.6em',
-            letterSpacing: '-0.02em',
-            background: 'linear-gradient(120deg, var(--neon-cyan), var(--neon-pink) 60%, var(--neon-purple))',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent',
-            textShadow: '0 0 40px rgba(178, 75, 255, 0.35)',
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            fontSize: '1.4em',
+            letterSpacing: '0.02em',
+            color: 'var(--ink)',
           }}
         >
-          THE QUEUE
+          THE RACK
         </div>
-        <div style={{ fontSize: '0.78em', color: 'var(--ink-dim)', marginTop: 4, fontWeight: 500 }}>
-          press <b style={{ color: 'var(--neon-cyan)' }}>n</b> to add · tap a ticket, tap again to commit
+        <div style={{ fontSize: '0.78em', color: 'var(--ink-dim)', marginTop: 4 }}>
+          press <b style={{ color: 'var(--ink)' }}>n</b> to add · tap a tube, tap again to commit
         </div>
       </header>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ padding: '18px 32px 0' }}>
-          <Rail
-            tasks={railTasks}
-            focusedId={focusedId}
-            armedId={armedId}
-            onArm={handleArm}
-            onStartRequest={handleStartRequest}
-            onToggleUrgent={handleToggleUrgent}
-            onOpenNotes={setNotesEditingId}
-            onReorder={handleReorderCommit}
-            onLocalReorder={handleLocalReorder}
-          />
-        </div>
+      <div style={{ padding: '18px 32px 0' }}>
+        <Rack
+          tasks={rackTasks}
+          focusedId={focusedId}
+          armedId={armedId}
+          justAddedId={justAddedId}
+          onArm={handleArm}
+          onStartRequest={handleStartRequest}
+          onReorder={handleReorderCommit}
+          onLocalReorder={handleLocalReorder}
+        />
+      </div>
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 32px', minHeight: 420 }}>
-          <Pass
-            task={passTask}
-            flipped={flippedForPass}
-            showingNoteInput={showingNoteInput}
-            noteCancelable={showingNoteInput && noteFlow?.after === null}
-            onCancelNote={handleCancelNote}
-            noteDraft={noteDraft}
-            onNoteDraftChange={setNoteDraft}
-            onSubmitNote={handleSubmitNote}
-            resumeReveal={resumeRevealId === passTaskId && !showingNoteInput}
-            onResumeClick={() => resumeRevealId && confirmResume(resumeRevealId)}
-            onBackClick={handleBackClick}
-            onOpenNotes={setNotesEditingId}
-            onPauseClick={handlePauseClick}
-            onDoneClick={handleDoneClick}
-            onDropClick={handleDropClick}
-            exitKind={exitAnim && exitAnim.taskId === passTaskId ? exitAnim.kind : null}
-            onExitAnimationComplete={handleExitComplete}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
-            <Spindle count={doneToday} bumpKey={bumpKey} />
-            <Bin />
-          </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 32px', minHeight: 420 }}>
+        <Bench
+          task={benchTask}
+          flipped={flippedForBench}
+          showingNoteInput={showingNoteInput}
+          noteCancelable={showingNoteInput && noteFlow?.after === null}
+          onCancelNote={handleCancelNote}
+          noteDraft={noteDraft}
+          onNoteDraftChange={setNoteDraft}
+          onSubmitNote={handleSubmitNote}
+          resumeReveal={resumeRevealId === benchTaskId && !showingNoteInput}
+          onResumeClick={() => resumeRevealId && confirmResume(resumeRevealId)}
+          onBackClick={handleBackClick}
+          onPauseClick={handlePauseClick}
+          onDoneClick={handleDoneClick}
+          onDropClick={handleDropClick}
+          exitKind={exitAnim && exitAnim.taskId === benchTaskId ? exitAnim.kind : null}
+          onExitAnimationComplete={handleExitComplete}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+          <CryoBox count={doneToday} bumpKey={bumpKey} />
+          <Drain />
         </div>
       </div>
 
       <AddForm open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />
-      <NotesEditor task={notesEditingTask} onClose={() => setNotesEditingId(null)} onSave={handleSaveNotes} />
     </div>
   )
 }
