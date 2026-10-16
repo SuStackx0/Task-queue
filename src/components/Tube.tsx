@@ -1,7 +1,16 @@
 import { forwardRef, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { motion } from 'motion/react'
 import type { Task } from '../types'
-import { agingFactor, hungAgo, liquidLevel, tubeLean, tubeVariant } from '../utils/tube'
+import {
+  agingFactor,
+  countdownLabelFromMs,
+  fractionFromMs,
+  hungAgo,
+  liquidLevel,
+  ownRemainingMs,
+  tubeLean,
+  tubeVariant,
+} from '../utils/tube'
 import styles from './Tube.module.css'
 
 const TAG_LABEL: Record<Task['tag'], string> = {
@@ -78,6 +87,11 @@ interface TubeProps {
   focused?: boolean
   armed?: boolean
   scramble?: boolean
+  /** Precomputed queue-cumulative remaining ms (own estimate + every timed
+   * tube ahead of it in the rack). When omitted, falls back to the task's
+   * own remaining time alone — used for the bench tube, which has nothing
+   * ahead of it in the chain. */
+  cumulativeMs?: number
   style?: CSSProperties
   className?: string
   onClick?: () => void
@@ -85,15 +99,19 @@ interface TubeProps {
 }
 
 const Tube = forwardRef<HTMLDivElement, TubeProps>(function Tube(
-  { task, flipped, size = 'rack', focused = false, armed = false, scramble = false, style, className, onClick, tabIndex },
+  { task, flipped, size = 'rack', focused = false, armed = false, scramble = false, cumulativeMs, style, className, onClick, tabIndex },
   ref
 ) {
   const hangStart = task.state === 'paused' && task.pausedAt ? task.pausedAt : task.createdAt
-  const aging = task.state === 'active' ? 0 : agingFactor(hangStart)
+  const hasCountdown = task.daysTotal != null && task.expiresAt != null && task.state !== 'active'
+  const effectiveMs = hasCountdown ? cumulativeMs ?? ownRemainingMs(task.expiresAt!) : null
+  const remaining = effectiveMs != null ? fractionFromMs(effectiveMs) : null
+  const aging = hasCountdown ? 1 - remaining! : task.state === 'active' ? 0 : agingFactor(hangStart)
   const lean = size === 'rack' ? tubeLean(task.id) : 0
   const w = size === 'rack' ? 140 : 215
   const h = size === 'rack' ? 215 : 340
-  const level = liquidLevel(aging)
+  const level = hasCountdown ? remaining! * 0.82 : liquidLevel(aging)
+  const critical = hasCountdown && remaining! < 0.12
   const variant = tubeVariant(task.id)
   const bodyVars = {
     '--bottom-radius': size === 'rack' ? '22px' : '34px',
@@ -130,8 +148,16 @@ const Tube = forwardRef<HTMLDivElement, TubeProps>(function Tube(
           outline: focused ? '2px solid var(--ink)' : 'none',
           outlineOffset: 3,
         }}
-        animate={{ rotateY: flipped ? 180 : 0, rotate: lean, scale: armed ? 1.08 : 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        animate={{
+          rotateY: flipped ? 180 : 0,
+          rotate: lean,
+          scale: armed ? 1.08 : critical ? [1, 1.04, 1] : 1,
+        }}
+        transition={
+          critical && !armed
+            ? { scale: { repeat: Infinity, duration: 1.1, ease: 'easeInOut' }, rotate: { type: 'spring', stiffness: 260, damping: 22 } }
+            : { type: 'spring', stiffness: 260, damping: 22 }
+        }
       >
         {/* front */}
         <div className={styles.face}>
@@ -163,7 +189,11 @@ const Tube = forwardRef<HTMLDivElement, TubeProps>(function Tube(
               <div className={styles.title}>{displayTitle}</div>
               <div className={styles.metaRow}>
                 <span className={styles.tagText}>{TAG_LABEL[task.tag]}</span>
-                {task.state !== 'active' && <span className={styles.hungText}>{hungAgo(hangStart)}</span>}
+                {task.state !== 'active' && (
+                  <span className={`${styles.hungText} ${critical ? styles.critical : ''}`}>
+                    {hasCountdown ? countdownLabelFromMs(effectiveMs!) : hungAgo(hangStart)}
+                  </span>
+                )}
               </div>
               <div className={styles.labelPeel} style={{ transform: `rotate(${aging * 18}deg)` }} />
             </div>

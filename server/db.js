@@ -10,7 +10,7 @@ const SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     tag TEXT NOT NULL CHECK (tag IN ('work', 'study', 'task')),
-    state TEXT NOT NULL CHECK (state IN ('queued', 'active', 'paused', 'done', 'dropped')),
+    state TEXT NOT NULL CHECK (state IN ('queued', 'active', 'paused', 'done', 'dropped', 'expired')),
     next_step TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
@@ -18,12 +18,17 @@ const SCHEMA = `
     done_at INTEGER,
     position REAL NOT NULL,
     urgent INTEGER NOT NULL DEFAULT 0,
-    notes TEXT
+    notes TEXT,
+    days_total REAL,
+    expires_at INTEGER,
+    expired_at INTEGER
   );
 
   CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active
     ON tasks(state) WHERE state = 'active';
 `
+
+const MS_PER_DAY = 86400000
 
 let SQL
 let sqlDb
@@ -61,14 +66,58 @@ async function init() {
 }
 
 function migrate() {
-  const cols = all(`PRAGMA table_info(tasks)`)
-  const names = cols.map((c) => c.name)
-  if (!names.includes('urgent')) {
+  const names = () => all(`PRAGMA table_info(tasks)`).map((c) => c.name)
+  if (!names().includes('urgent')) {
     sqlDb.run(`ALTER TABLE tasks ADD COLUMN urgent INTEGER NOT NULL DEFAULT 0`)
   }
-  if (!names.includes('notes')) {
+  if (!names().includes('notes')) {
     sqlDb.run(`ALTER TABLE tasks ADD COLUMN notes TEXT`)
   }
+  if (!names().includes('days_total')) {
+    sqlDb.run(`ALTER TABLE tasks ADD COLUMN days_total REAL`)
+  }
+  if (!names().includes('expires_at')) {
+    sqlDb.run(`ALTER TABLE tasks ADD COLUMN expires_at INTEGER`)
+  }
+  if (!names().includes('expired_at')) {
+    sqlDb.run(`ALTER TABLE tasks ADD COLUMN expired_at INTEGER`)
+  }
+
+  // The 'state' CHECK constraint is baked into the table definition at
+  // creation time — adding columns above doesn't touch it, so an
+  // already-existing database still rejects state='expired' until the
+  // table itself is rebuilt with the updated constraint. Rebuild only when
+  // needed, copying every column that actually exists so this is safe
+  // regardless of which of the migrations above have already run.
+  const tableRow = get(`SELECT sql FROM sqlite_master WHERE type='table' AND name='tasks'`)
+  if (tableRow && !tableRow.sql.includes("'expired'")) {
+    const cols = names()
+    sqlDb.run(`ALTER TABLE tasks RENAME TO tasks_old`)
+    sqlDb.run(SCHEMA)
+    const colList = cols.join(', ')
+    sqlDb.run(`INSERT INTO tasks (${colList}) SELECT ${colList} FROM tasks_old`)
+    sqlDb.run(`DROP TABLE tasks_old`)
+  }
+}
+
+/** Lazily flips any queued/paused task whose countdown has run out into
+ * 'expired' — runs on every list fetch so correctness holds even after the
+ * app was closed when a tube's time actually ran out; nothing is ever
+ * silently lost, it's always sitting in the dustbin waiting to be found. */
+function sweepExpired() {
+  const now = Date.now()
+  const due = all(
+    `SELECT id FROM tasks WHERE state IN ('queued', 'paused') AND expires_at IS NOT NULL AND expires_at <= ?`,
+    [now]
+  )
+  for (const row of due) {
+    sqlDb.run(`UPDATE tasks SET state = 'expired', expired_at = ?, updated_at = ? WHERE id = ?`, [
+      now,
+      now,
+      row.id,
+    ])
+  }
+  if (due.length) persist()
 }
 
 function rowsToObjects(result) {
@@ -96,4 +145,4 @@ function run(sql, params = []) {
   persist()
 }
 
-module.exports = { init, all, get, run, rowsToObjects }
+module.exports = { init, all, get, run, rowsToObjects, sweepExpired, MS_PER_DAY }

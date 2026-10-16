@@ -19,9 +19,9 @@ async function req<T>(url: string, opts?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  list: () => req<{ tasks: Task[]; doneToday: number }>('/api/tasks'),
-  create: (title: string, tag: Tag) =>
-    req<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ title, tag }) }),
+  list: () => req<{ tasks: Task[]; expired: Task[]; doneToday: number }>('/api/tasks'),
+  create: (title: string, tag: Tag, days: number) =>
+    req<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ title, tag, days }) }),
   start: (id: number) => req<Task>(`/api/tasks/${id}/start`, { method: 'POST' }),
   back: (id: number) => req<Task>(`/api/tasks/${id}/back`, { method: 'POST' }),
   pause: (id: number, nextStep: string) =>
@@ -37,4 +37,9 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ position }),
     }),
+  expire: (id: number) => req<Task>(`/api/tasks/${id}/expire`, { method: 'POST' }),
+  restore: (id: number, days: number) =>
+    req<Task>(`/api/tasks/${id}/restore`, { method: 'POST', body: JSON.stringify({ days }) }),
+  extend: (id: number, days: number) =>
+    req<Task>(`/api/tasks/${id}/extend`, { method: 'PATCH', body: JSON.stringify({ days }) }),
 }

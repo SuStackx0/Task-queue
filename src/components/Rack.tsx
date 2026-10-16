@@ -2,6 +2,7 @@ import { useRef, useState, type HTMLAttributes } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDrag } from '@use-gesture/react'
 import type { Task } from '../types'
+import DaySlider from './DaySlider'
 import Tube from './Tube'
 import styles from './Rack.module.css'
 
@@ -10,28 +11,40 @@ interface RackProps {
   focusedId: number | null
   armedId: number | null
   justAddedId: number | null
+  expiringId: number | null
+  cumulativeMs: Map<number, number>
   onArm: (id: number) => void
   onStartRequest: (id: number) => void
   onReorder: (id: number, newPosition: number) => void
   onLocalReorder: (orderedIds: number[]) => void
+  onExpireComplete: (id: number) => void
+  onExtend: (id: number, addDays: number) => void
 }
 
 const START_THRESHOLD = 56
+
+const EXPIRE_TARGET = { x: 420, y: -240, scale: 0.25, opacity: 0, rotate: 30 }
 
 export default function Rack({
   tasks,
   focusedId,
   armedId,
   justAddedId,
+  expiringId,
+  cumulativeMs,
   onArm,
   onStartRequest,
   onReorder,
   onLocalReorder,
+  onExpireComplete,
+  onExtend,
 }: RackProps) {
   const refs = useRef(new Map<number, HTMLDivElement>())
   const [dragState, setDragState] = useState<{ id: number; dx: number; dy: number; axis: 'x' | 'y' | null } | null>(
     null
   )
+  const [extendingId, setExtendingId] = useState<number | null>(null)
+  const [extendDays, setExtendDays] = useState(2)
 
   const bind = useDrag(({ args: [id], movement: [mx, my], first, last, event }) => {
     event.preventDefault?.()
@@ -105,6 +118,7 @@ export default function Rack({
         <AnimatePresence initial={false}>
           {tasks.map((task) => {
             const isDragging = dragState?.id === task.id
+            const isExpiring = task.id === expiringId
             const dx = isDragging && dragState?.axis === 'x' ? dragState.dx : 0
             const dy = isDragging && dragState?.axis === 'y' ? Math.min(0, dragState.dy) : 0
             const swing = isDragging && dragState?.axis === 'y' ? Math.max(-14, dy / 5) : 0
@@ -120,26 +134,35 @@ export default function Rack({
                   else refs.current.delete(task.id)
                 }}
                 initial={{ opacity: 0, scale: 0.85, y: 16 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  x: dx,
-                  y: dy,
-                  rotate: swing,
-                }}
+                animate={
+                  isExpiring
+                    ? EXPIRE_TARGET
+                    : {
+                        opacity: 1,
+                        scale: 1,
+                        x: dx,
+                        y: dy,
+                        rotate: swing,
+                      }
+                }
                 exit={{ opacity: 0, scale: 0.8, y: 10, transition: { duration: 0.2 } }}
                 transition={
-                  isDragging
+                  isExpiring
+                    ? { duration: 0.5, ease: 'easeIn' }
+                    : isDragging
                     ? { type: 'tween', duration: 0 }
                     : { type: 'spring', stiffness: 420, damping: 26 }
                 }
-                whileHover={!isDragging ? { y: -6 } : undefined}
+                whileHover={!isDragging && !isExpiring ? { y: -6 } : undefined}
+                onAnimationComplete={() => {
+                  if (isExpiring) onExpireComplete(task.id)
+                }}
               >
                 <div
                   {...(bind(task.id) as HTMLAttributes<HTMLDivElement>)}
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (dragState) return
+                    if (dragState || isExpiring) return
                     if (armedId === task.id) onStartRequest(task.id)
                     else onArm(task.id)
                   }}
@@ -152,6 +175,7 @@ export default function Rack({
                     focused={focusedId === task.id}
                     armed={armedId === task.id}
                     scramble={justAddedId === task.id}
+                    cumulativeMs={cumulativeMs.get(task.id)}
                     tabIndex={0}
                   />
                   {armedId === task.id && (
@@ -159,7 +183,35 @@ export default function Rack({
                       tap again to {task.state === 'paused' ? 'resume' : 'start'} · esc to cancel
                     </div>
                   )}
+                  {task.daysTotal != null && !isExpiring && (
+                    <button
+                      type="button"
+                      className={styles.extendFlag}
+                      title="add more days"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExtendDays(2)
+                        setExtendingId((cur) => (cur === task.id ? null : task.id))
+                      }}
+                    >
+                      ⏱+
+                    </button>
+                  )}
                 </div>
+                {extendingId === task.id && (
+                  <div className={styles.extendPopover} onClick={(e) => e.stopPropagation()}>
+                    <DaySlider days={extendDays} onDaysChange={setExtendDays} label="add days" />
+                    <button
+                      className={styles.extendConfirm}
+                      onClick={() => {
+                        onExtend(task.id, extendDays)
+                        setExtendingId(null)
+                      }}
+                    >
+                      confirm →
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )
           })}

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import type { Tag } from '../types'
+import DaySlider from './DaySlider'
 import styles from './AddForm.module.css'
 
 interface AddFormProps {
   open: boolean
   onClose: () => void
-  onSubmit: (title: string, tag: Tag) => void
+  onSubmit: (title: string, tag: Tag, days: number) => void
 }
 
 const TAGS: Tag[] = ['work', 'study', 'task']
@@ -14,19 +15,21 @@ const TAGS: Tag[] = ['work', 'study', 'task']
 export default function AddForm({ open, onClose, onSubmit }: AddFormProps) {
   const [title, setTitle] = useState('')
   const [tag, setTag] = useState<Tag>('work')
+  const [days, setDays] = useState(7)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) {
       setTitle('')
       setTag('work')
+      setDays(7)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
   }, [open])
 
   function submit() {
     if (!title.trim()) return
-    onSubmit(title.trim(), tag)
+    onSubmit(title.trim(), tag, days)
   }
 
   return (
@@ -71,6 +74,7 @@ export default function AddForm({ open, onClose, onSubmit }: AddFormProps) {
                 </button>
               ))}
             </div>
+            <DaySlider days={days} onDaysChange={setDays} label="your upper-bound estimate" />
             <div className={styles.actions}>
               <button className={styles.btn} onClick={onClose}>
                 cancel

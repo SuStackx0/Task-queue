@@ -6,6 +6,8 @@ import Bench from './components/Bench'
 import CryoBox from './components/CryoBox'
 import Drain from './components/Drain'
 import AddForm from './components/AddForm'
+import Dustbin from './components/Dustbin'
+import { computeCumulativeMs, ownRemainingMs } from './utils/tube'
 
 interface NoteFlow {
   taskId: number
@@ -22,12 +24,14 @@ function sortTasks(tasks: Task[]): Task[] {
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [expired, setExpired] = useState<Task[]>([])
   const [doneToday, setDoneToday] = useState(0)
   const [addOpen, setAddOpen] = useState(false)
   const [noteFlow, setNoteFlow] = useState<NoteFlow | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [resumeRevealId, setResumeRevealId] = useState<number | null>(null)
   const [exitAnim, setExitAnim] = useState<{ taskId: number; kind: 'done' | 'drop' } | null>(null)
+  const [expiringId, setExpiringId] = useState<number | null>(null)
   const [focusedId, setFocusedId] = useState<number | null>(null)
   const [armedId, setArmedId] = useState<number | null>(null)
   const [justAddedId, setJustAddedId] = useState<number | null>(null)
@@ -55,8 +59,9 @@ export default function App() {
   }, [])
 
   const load = useCallback(() => {
-    api.list().then(({ tasks, doneToday }) => {
+    api.list().then(({ tasks, expired, doneToday }) => {
       setTasks(tasks)
+      setExpired(expired)
       setDoneToday(doneToday)
     })
   }, [])
@@ -65,12 +70,28 @@ export default function App() {
     load()
   }, [load])
 
-  // re-render periodically so "hung Nd ago" / aging stay live
+  // Ticks every second so a countdown tube's liquid visibly drains in real
+  // time (not in daily steps) and so "hung Nd ago" stays live. Also the
+  // trigger point for noticing a tube's countdown just hit zero.
   const [, forceTick] = useState(0)
   useEffect(() => {
-    const t = setInterval(() => forceTick((n) => n + 1), 30000)
+    const t = setInterval(() => forceTick((n) => n + 1), 1000)
     return () => clearInterval(t)
   }, [])
+
+  useEffect(() => {
+    if (expiringId != null) return
+    const now = Date.now()
+    const due = tasks.find(
+      (t) =>
+        (t.state === 'queued' || t.state === 'paused') &&
+        t.daysTotal != null &&
+        t.expiresAt != null &&
+        t.expiresAt <= now
+    )
+    if (due) setExpiringId(due.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  })
 
   const activeTask = tasks.find((t) => t.state === 'active') || null
   const benchTaskId = activeTask?.id ?? resumeRevealId
@@ -78,6 +99,10 @@ export default function App() {
   const showingNoteInput = noteFlow !== null && noteFlow.taskId === benchTaskId
   const flippedForBench = showingNoteInput || resumeRevealId === benchTaskId
   const rackTasks = tasks.filter((t) => t.state !== 'active' && t.id !== resumeRevealId)
+  // The active tube (if it carries its own estimate) still occupies time
+  // ahead of the whole rack, so it seeds the queue's cumulative chain.
+  const aheadMs = activeTask?.daysTotal != null && activeTask.expiresAt != null ? ownRemainingMs(activeTask.expiresAt) : 0
+  const cumulativeMs = computeCumulativeMs(rackTasks, aheadMs)
 
   function doStart(id: number) {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, state: 'active' } : t)))
@@ -187,13 +212,56 @@ export default function App() {
     }
   }
 
-  function handleAdd(title: string, tag: Tag) {
+  function handleAdd(title: string, tag: Tag, days: number) {
     setAddOpen(false)
-    api.create(title, tag).then((task) => {
+    api.create(title, tag, days).then((task) => {
       setTasks((prev) => sortTasks([...prev, task]))
       setJustAddedId(task.id)
       window.setTimeout(() => setJustAddedId((cur) => (cur === task.id ? null : cur)), 900)
     })
+  }
+
+  function handleExpireComplete(id: number) {
+    setTasks((prev) => {
+      const found = prev.find((t) => t.id === id)
+      if (found) {
+        setExpired((e) => [{ ...found, state: 'expired', expiredAt: Date.now() }, ...e])
+      }
+      return prev.filter((t) => t.id !== id)
+    })
+    setExpiringId(null)
+    api.expire(id).catch(() => load())
+  }
+
+  function handleRestore(id: number, days: number) {
+    const t = Date.now()
+    const found = expired.find((task) => task.id === id)
+    setExpired((prev) => prev.filter((task) => task.id !== id))
+    if (found) {
+      const restored: Task = {
+        ...found,
+        state: 'queued',
+        daysTotal: days,
+        expiresAt: t + days * 86400000,
+        createdAt: t,
+        nextStep: null,
+        pausedAt: null,
+        expiredAt: null,
+      }
+      setTasks((prev) => sortTasks([...prev, restored]))
+    }
+    api.restore(id, days).catch(() => load())
+  }
+
+  function handleExtend(id: number, addDays: number) {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id && t.daysTotal != null && t.expiresAt != null
+          ? { ...t, daysTotal: t.daysTotal + addDays, expiresAt: t.expiresAt + addDays * 86400000 }
+          : t
+      )
+    )
+    api.extend(id, addDays).catch(() => load())
   }
 
   function handleLocalReorder(orderedIds: number[]) {
@@ -256,6 +324,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <Dustbin expired={expired} onRestore={handleRestore} />
       <header style={{ padding: '26px 32px 0' }}>
         <div
           style={{
@@ -279,10 +348,14 @@ export default function App() {
           focusedId={focusedId}
           armedId={armedId}
           justAddedId={justAddedId}
+          expiringId={expiringId}
+          cumulativeMs={cumulativeMs}
           onArm={handleArm}
           onStartRequest={handleStartRequest}
           onReorder={handleReorderCommit}
           onLocalReorder={handleLocalReorder}
+          onExpireComplete={handleExpireComplete}
+          onExtend={handleExtend}
         />
       </div>
 
@@ -302,6 +375,7 @@ export default function App() {
           onPauseClick={handlePauseClick}
           onDoneClick={handleDoneClick}
           onDropClick={handleDropClick}
+          onExtend={handleExtend}
           exitKind={exitAnim && exitAnim.taskId === benchTaskId ? exitAnim.kind : null}
           onExitAnimationComplete={handleExitComplete}
         />

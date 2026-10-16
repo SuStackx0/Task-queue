@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import type { Task } from '../types'
+import DaySlider from './DaySlider'
 import Tube from './Tube'
 import styles from './Bench.module.css'
 
@@ -19,6 +20,7 @@ interface BenchProps {
   onPauseClick: () => void
   onDoneClick: () => void
   onDropClick: () => void
+  onExtend: (id: number, addDays: number) => void
   exitKind: 'done' | 'drop' | null
   onExitAnimationComplete: () => void
 }
@@ -48,10 +50,17 @@ export default function Bench({
   onPauseClick,
   onDoneClick,
   onDropClick,
+  onExtend,
   exitKind,
   onExitAnimationComplete,
 }: BenchProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [extending, setExtending] = useState(false)
+  const [extendDays, setExtendDays] = useState(2)
+
+  useEffect(() => {
+    setExtending(false)
+  }, [task?.id])
 
   useEffect(() => {
     if (showingNoteInput) inputRef.current?.focus()
@@ -141,6 +150,32 @@ export default function Bench({
                 <button className={styles.backBtn} onClick={onBackClick} title="undo starting this tube">
                   ← back
                 </button>
+                {task.daysTotal != null && (
+                  <button
+                    className={styles.extendBtn}
+                    onClick={() => {
+                      setExtendDays(2)
+                      setExtending((e) => !e)
+                    }}
+                    title="add more days"
+                  >
+                    ⏱ extend
+                  </button>
+                )}
+                {extending && (
+                  <div className={styles.extendPopover} onClick={(e) => e.stopPropagation()}>
+                    <DaySlider days={extendDays} onDaysChange={setExtendDays} label="add days" />
+                    <button
+                      className={styles.extendConfirm}
+                      onClick={() => {
+                        onExtend(task.id, extendDays)
+                        setExtending(false)
+                      }}
+                    >
+                      confirm →
+                    </button>
+                  </div>
+                )}
                 <div className={styles.controls}>
                   <button className={styles.btn} onClick={onPauseClick}>
                     pause (p)
