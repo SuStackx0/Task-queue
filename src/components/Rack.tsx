@@ -184,13 +184,13 @@ export default function Rack({
                     <button
                       type="button"
                       className={styles.extendFlag}
-                      title="add more days"
+                      title="edit upper bound"
                       onClick={(e) => {
                         e.stopPropagation()
                         onRequestExtend(task)
                       }}
                     >
-                      ⏱+
+                      ✎
                     </button>
                   )}
                 </div>

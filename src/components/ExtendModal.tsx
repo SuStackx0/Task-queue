@@ -7,15 +7,18 @@ import styles from './ExtendModal.module.css'
 interface ExtendModalProps {
   task: Task | null
   onClose: () => void
-  onConfirm: (id: number, addDays: number) => void
+  onConfirm: (id: number, newDays: number) => void
 }
 
 export default function ExtendModal({ task, onClose, onConfirm }: ExtendModalProps) {
-  const [days, setDays] = useState(2)
+  const [days, setDays] = useState(7)
 
+  // Seed the slider with the tube's current upper bound, not an arbitrary
+  // default — this is a "set it to what you want" control, not "add N more"
+  // (dragging to the number you actually want is what people expect).
   useEffect(() => {
-    if (task) setDays(2)
-  }, [task?.id])
+    if (task?.daysTotal != null) setDays(task.daysTotal)
+  }, [task?.id, task?.daysTotal])
 
   return (
     <AnimatePresence>
@@ -35,9 +38,10 @@ export default function ExtendModal({ task, onClose, onConfirm }: ExtendModalPro
             transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <label className={styles.label}>⏱ add more time</label>
+            <label className={styles.label}>✎ edit upper bound</label>
             <div className={styles.title}>{task.title}</div>
-            <DaySlider days={days} onDaysChange={setDays} label={`add days (now ${task.daysTotal})`} />
+            <div className={styles.currentValue}>currently {task.daysTotal} days — drag to the new total</div>
+            <DaySlider days={days} onDaysChange={setDays} />
             <div className={styles.actions}>
               <button className={styles.btn} onClick={onClose}>
                 cancel
@@ -49,7 +53,7 @@ export default function ExtendModal({ task, onClose, onConfirm }: ExtendModalPro
                   onClose()
                 }}
               >
-                confirm →
+                set to {days} days →
               </button>
             </div>
           </motion.div>

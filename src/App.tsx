@@ -255,15 +255,13 @@ export default function App() {
     api.restore(id, days).catch(() => load())
   }
 
-  function handleExtend(id: number, addDays: number) {
+  function handleSetDays(id: number, newDays: number) {
+    // Absolute, not additive — "it was 7, make it 9" means the new upper
+    // bound is 9 days from when the tube was first started, not 7+9.
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id && t.daysTotal != null && t.expiresAt != null
-          ? { ...t, daysTotal: t.daysTotal + addDays, expiresAt: t.expiresAt + addDays * 86400000 }
-          : t
-      )
+      prev.map((t) => (t.id === id ? { ...t, daysTotal: newDays, expiresAt: t.createdAt + newDays * 86400000 } : t))
     )
-    api.extend(id, addDays).catch(() => load())
+    api.setDays(id, newDays).catch(() => load())
   }
 
   function handleLocalReorder(orderedIds: number[]) {
@@ -388,7 +386,7 @@ export default function App() {
       </div>
 
       <AddForm open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />
-      <ExtendModal task={extendingTask} onClose={() => setExtendingTask(null)} onConfirm={handleExtend} />
+      <ExtendModal task={extendingTask} onClose={() => setExtendingTask(null)} onConfirm={handleSetDays} />
     </div>
   )
 }

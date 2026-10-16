@@ -32,8 +32,14 @@
 .title {
   font-weight: 700;
   font-size: 1.05em;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
   word-break: break-word;
+}
+
+.currentValue {
+  font-size: 0.72em;
+  color: var(--ink-dim);
+  margin-bottom: 14px;
 }
 
 .actions {

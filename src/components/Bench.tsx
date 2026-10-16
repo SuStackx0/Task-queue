@@ -144,8 +144,8 @@ export default function Bench({
                   ← back
                 </button>
                 {task.daysTotal != null && (
-                  <button className={styles.extendBtn} onClick={() => onRequestExtend(task)} title="add more days">
-                    ⏱ extend
+                  <button className={styles.extendBtn} onClick={() => onRequestExtend(task)} title="edit upper bound">
+                    ✎ edit days
                   </button>
                 )}
                 <div className={styles.controls}>

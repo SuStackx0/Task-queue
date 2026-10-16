@@ -40,6 +40,6 @@ export const api = {
   expire: (id: number) => req<Task>(`/api/tasks/${id}/expire`, { method: 'POST' }),
   restore: (id: number, days: number) =>
     req<Task>(`/api/tasks/${id}/restore`, { method: 'POST', body: JSON.stringify({ days }) }),
-  extend: (id: number, days: number) =>
-    req<Task>(`/api/tasks/${id}/extend`, { method: 'PATCH', body: JSON.stringify({ days }) }),
+  setDays: (id: number, days: number) =>
+    req<Task>(`/api/tasks/${id}/days`, { method: 'PATCH', body: JSON.stringify({ days }) }),
 }

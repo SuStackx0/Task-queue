@@ -122,22 +122,26 @@ app.post('/api/tasks/:id/restore', async (req, reply) => {
   reply.send(serialize(updated))
 })
 
-app.patch('/api/tasks/:id/extend', async (req, reply) => {
+app.patch('/api/tasks/:id/days', async (req, reply) => {
+  // Sets the tube's upper-bound estimate to an absolute value (not additive
+  // — "I said 7, I want it to say 9" means set it to 9, not 7+9=16). The
+  // new countdown is recomputed from the tube's original created_at, so
+  // "9 days" always means 9 days from when it was first started, however
+  // much of that has already elapsed.
   const id = Number(req.params.id)
   const row = db.get(`SELECT * FROM tasks WHERE id = ?`, [id])
   if (!row) return reply.code(404).send({ error: 'not found' })
   if (!['queued', 'active', 'paused'].includes(row.state)) {
-    return reply.code(409).send({ error: 'only an active, queued, or paused tube can be extended' })
+    return reply.code(409).send({ error: 'only an active, queued, or paused tube can be edited' })
   }
-  if (row.days_total == null || row.expires_at == null) {
-    return reply.code(409).send({ error: 'tube has no estimate to extend' })
+  if (row.days_total == null) {
+    return reply.code(409).send({ error: 'tube has no estimate to edit' })
   }
   const { days } = req.body || {}
-  const addDays = clampDays(days)
-  if (!addDays) return reply.code(400).send({ error: `days (1-${MAX_DAYS}) is required` })
+  const newDaysTotal = clampDays(days)
+  if (!newDaysTotal) return reply.code(400).send({ error: `days (1-${MAX_DAYS}) is required` })
   const t = now()
-  const newDaysTotal = row.days_total + addDays
-  const newExpiresAt = row.expires_at + addDays * db.MS_PER_DAY
+  const newExpiresAt = row.created_at + newDaysTotal * db.MS_PER_DAY
   db.run(`UPDATE tasks SET days_total = ?, expires_at = ?, updated_at = ? WHERE id = ?`, [
     newDaysTotal,
     newExpiresAt,

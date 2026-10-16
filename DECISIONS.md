@@ -1,5 +1,12 @@
 # Decisions log
 
+## Fix: "extend" was additive when the user expected absolute edit
+
+- Reported directly: a tube at 7 days, dragged the slider to 9 expecting "the upper bound is now 9", got 16 instead (7+9) — a real interaction-design bug, not a data bug. The control was framed as "add N days" (slider defaulted to an arbitrary 2, label said "add days"), which doesn't match how anyone reads a number they're dragging to a target value.
+- Changed `/extend` to `PATCH /api/tasks/:id/days`, which **sets** `days_total` to the chosen value outright rather than adding to it. The new `expires_at` is recomputed from the tube's original `created_at` (`created_at + newDays * MS_PER_DAY`), so "9 days" always means 9 days from when the tube was first started, correctly accounting for however much time has already elapsed — not 9 days from whatever was left.
+- `ExtendModal` now seeds the slider with the tube's *current* `days_total` (not a fixed default) and the confirm button literally reads "set to N days →", so the number on screen while dragging is unambiguous about what will happen.
+- Fixed the one real task this bug had corrupted (7 → 16 via the old additive control) back to 7 using the new endpoint, verified via the API before and after. Separately verified the fix itself against a throwaway task: 7 → edit → drag to 9 → confirmed `daysTotal` is exactly 9, not 16.
+
 ## Fix: extend-time popover overlapped neighboring tubes
 
 - The rack/bench extend controls originally opened an inline popover positioned relative to the tube itself (`left: calc(100% + 10px)` in the rack, anchored to the button in the bench). With more than one tube in the rack, or any tube that wasn't the last one, this placed the popover directly on top of (or clipped by) the neighboring tube — a real layout bug, not just a cosmetic one, since the slider underneath could be the wrong tube's.
