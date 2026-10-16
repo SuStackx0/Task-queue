@@ -2,7 +2,6 @@ import { useRef, useState, type HTMLAttributes } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDrag } from '@use-gesture/react'
 import type { Task } from '../types'
-import DaySlider from './DaySlider'
 import Tube from './Tube'
 import styles from './Rack.module.css'
 
@@ -18,7 +17,7 @@ interface RackProps {
   onReorder: (id: number, newPosition: number) => void
   onLocalReorder: (orderedIds: number[]) => void
   onExpireComplete: (id: number) => void
-  onExtend: (id: number, addDays: number) => void
+  onRequestExtend: (task: Task) => void
 }
 
 const START_THRESHOLD = 56
@@ -37,14 +36,12 @@ export default function Rack({
   onReorder,
   onLocalReorder,
   onExpireComplete,
-  onExtend,
+  onRequestExtend,
 }: RackProps) {
   const refs = useRef(new Map<number, HTMLDivElement>())
   const [dragState, setDragState] = useState<{ id: number; dx: number; dy: number; axis: 'x' | 'y' | null } | null>(
     null
   )
-  const [extendingId, setExtendingId] = useState<number | null>(null)
-  const [extendDays, setExtendDays] = useState(2)
 
   const bind = useDrag(({ args: [id], movement: [mx, my], first, last, event }) => {
     event.preventDefault?.()
@@ -190,28 +187,13 @@ export default function Rack({
                       title="add more days"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setExtendDays(2)
-                        setExtendingId((cur) => (cur === task.id ? null : task.id))
+                        onRequestExtend(task)
                       }}
                     >
                       ⏱+
                     </button>
                   )}
                 </div>
-                {extendingId === task.id && (
-                  <div className={styles.extendPopover} onClick={(e) => e.stopPropagation()}>
-                    <DaySlider days={extendDays} onDaysChange={setExtendDays} label="add days" />
-                    <button
-                      className={styles.extendConfirm}
-                      onClick={() => {
-                        onExtend(task.id, extendDays)
-                        setExtendingId(null)
-                      }}
-                    >
-                      confirm →
-                    </button>
-                  </div>
-                )}
               </motion.div>
             )
           })}

@@ -7,6 +7,7 @@ import CryoBox from './components/CryoBox'
 import Drain from './components/Drain'
 import AddForm from './components/AddForm'
 import Dustbin from './components/Dustbin'
+import ExtendModal from './components/ExtendModal'
 import { computeCumulativeMs, ownRemainingMs } from './utils/tube'
 
 interface NoteFlow {
@@ -35,6 +36,7 @@ export default function App() {
   const [focusedId, setFocusedId] = useState<number | null>(null)
   const [armedId, setArmedId] = useState<number | null>(null)
   const [justAddedId, setJustAddedId] = useState<number | null>(null)
+  const [extendingTask, setExtendingTask] = useState<Task | null>(null)
   const [bumpKey, setBumpKey] = useState(0)
   const resumeTimer = useRef<number | null>(null)
   const armTimer = useRef<number | null>(null)
@@ -355,7 +357,7 @@ export default function App() {
           onReorder={handleReorderCommit}
           onLocalReorder={handleLocalReorder}
           onExpireComplete={handleExpireComplete}
-          onExtend={handleExtend}
+          onRequestExtend={setExtendingTask}
         />
       </div>
 
@@ -375,7 +377,7 @@ export default function App() {
           onPauseClick={handlePauseClick}
           onDoneClick={handleDoneClick}
           onDropClick={handleDropClick}
-          onExtend={handleExtend}
+          onRequestExtend={setExtendingTask}
           exitKind={exitAnim && exitAnim.taskId === benchTaskId ? exitAnim.kind : null}
           onExitAnimationComplete={handleExitComplete}
         />
@@ -386,6 +388,7 @@ export default function App() {
       </div>
 
       <AddForm open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />
+      <ExtendModal task={extendingTask} onClose={() => setExtendingTask(null)} onConfirm={handleExtend} />
     </div>
   )
 }

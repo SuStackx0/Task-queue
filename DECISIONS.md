@@ -1,5 +1,11 @@
 # Decisions log
 
+## Fix: extend-time popover overlapped neighboring tubes
+
+- The rack/bench extend controls originally opened an inline popover positioned relative to the tube itself (`left: calc(100% + 10px)` in the rack, anchored to the button in the bench). With more than one tube in the rack, or any tube that wasn't the last one, this placed the popover directly on top of (or clipped by) the neighboring tube — a real layout bug, not just a cosmetic one, since the slider underneath could be the wrong tube's.
+- Fixed by replacing both inline popovers with a single shared `ExtendModal` component — a centered, fixed-position overlay with a dimming backdrop, the same pattern already used by `AddForm` and `Dustbin`. This can't overlap a tube by construction regardless of rack density or which tube triggered it, since it's never positioned relative to the triggering element.
+- Verified this specific regression directly: opened the extend modal from the first, middle, and an active (bench) tube against a real 5-tube rack, confirmed each shows the correct task's own title/days with no visual collision, and confirmed via the API that no real task data was mutated by the test (only throwaway tasks were used for anything destructive).
+
 ## Specimen rack rebuild (superseding the earlier "neon glass" iteration)
 
 - A new build-plan prompt arrived mid-project with a completely different visual identity (monochrome lab/specimen-rack, test tubes) and explicitly re-states a minimal, closed feature list ("only these features, nothing more", "do not add priorities", "strictly monochrome, zero hue anywhere"). Treating this as a full replacement of the prior session's ad-hoc additions — the 5-theme color switcher, the `urgent` flag, and the free-text notes editor — since all three directly contradict this spec's explicit constraints (color at all; "no priorities"; "only these features"). If the user wants any of those back later, they're one ask away — the backend data those features touched isn't destroyed (see below), just no longer surfaced.

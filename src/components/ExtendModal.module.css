@@ -1,0 +1,61 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16vh;
+  z-index: 50;
+}
+
+.panel {
+  width: min(360px, 90vw);
+  background: var(--rack);
+  border: 1px solid var(--rack-edge);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 30px 70px -20px var(--shadow-color);
+  font-family: 'Space Mono', monospace;
+  color: var(--ink);
+}
+
+.label {
+  font-size: 0.68em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 1.05em;
+  margin-bottom: 16px;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 0.82em;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--ink-dim);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
